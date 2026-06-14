@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <fstream>
 
 bool is_running = true;
 
@@ -124,6 +125,44 @@ void delete_item(){
     items.erase(items.begin() + index_to_delete);
 }
 
+void save(const std::vector<Item>& itms) {
+    std::ofstream out("save.txt");
+    if (out.is_open()) {
+        for (size_t i = 0; i < itms.size(); i++ ){
+            out << itms[i].modyfy << "\n";
+            out << itms[i].name << "\n";
+            out << itms[i].power << "\n";
+            out << itms[i].rarity << "\n";
+        }
+        out.close(); // Після роботи файл ТРЕБА закрити
+    }
+}
+void download(std::vector<Item>& itms) {
+    std::ifstream in("save.txt");
+    if (in.is_open()) {
+
+        int modyfy;
+        std::string name;
+        int power;
+        std::string rarity;
+
+        itms.clear();
+
+        while (in >> modyfy) {
+            in.ignore();
+            std::getline(in, name); // Тепер спокійно читаємо назву з пробілами повністю
+            
+            in >> power;
+            in.ignore(); // Знову чистимо буфер після числа
+            
+            std::getline(in, rarity); // Читаємо рідкість
+            
+            itms.push_back({modyfy, name, power, rarity});
+        }
+        in.close();
+    }
+}
+
 void handle_menu() {
     std::string input;
     std::cout << "\nВибери дію (1-5):\n";
@@ -132,9 +171,11 @@ void handle_menu() {
     std::cout << "3 - модифікувати зброю\n";
     std::cout << "4 - забрати річ з рюкзака\n";
     std::cout << "5 - вийти з гри\n";
+    std::cout << "6 - вийти з гри та зберегти\n";
+    std::cout << "7 - завантажити гру\n";
     std::cout << "Твій вибір: ";
     
-    int choice = get_num(1, 5);
+    int choice = get_num(1, 7);
 
     switch (choice) {
         case 1:
@@ -158,9 +199,20 @@ void handle_menu() {
             std::cout << "Бувай, сталкере! Вдалого полювання за артефактами.\n";
             is_running = false;
             break;
+        case 6:
+            clear_screen();
+            save(items);
+            std::cout << "Бувай, сталкере! Вдалого полювання за артефактами.\n";
+            is_running = false;
+            break;
+        case 7:
+            clear_screen();
+            download(items);
+            std::cout << "з поверненням!.\n";
+            break;
         default:
             clear_screen();
-            std::cout << "Неправильний вибір! Дозволені тільки цифри 1, 2, 3, 4 або 5.\n";
+            std::cout << "Неправильний вибір! Дозволені тільки цифри 1 - 7.\n";
             break;
     }
 }
