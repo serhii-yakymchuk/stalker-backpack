@@ -4,17 +4,6 @@
 #include <random>
 #include <fstream>
 
-bool is_running = true;
-
-struct Item {
-    int modyfy;
-    std::string name; 
-    int power;       
-    std::string rarity;   
-};
-
-std::vector<Item> items;
-
 int rundom_num (int min, int max) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -62,7 +51,25 @@ void clear_screen() {
     std::cout << "\033[2J\033[H" << std::flush;
 }
 
-void show_item(){
+struct Item {
+    int modyfy;
+    std::string name; 
+    int power;       
+    std::string rarity;   
+};
+
+class Inventory {
+private:
+    std::vector<Item> items;
+
+public:
+
+Inventory() {
+
+    items.push_back({0, "Ніж", 15, "Звичайна"});
+}
+
+void show(){
     if (items.empty()) {
         std::cout << "Твій рюкзак порожній, як кишені новічка.\n";
         return;
@@ -74,11 +81,9 @@ void show_item(){
         }else{
             std::cout << i+1 << ". [+" << items[i].modyfy << "] " << items[i].name << " [Сила: " << items[i].power << "] | Рідкість: " << items[i].rarity << "\n";
         }
-        
     }   
     std::cout << "-----------------------\n";
 }
-
 void push(){
     if (items.size() == 5) {
         std::cout << "Рюкзак заповнений! Треба щось викинути.\n";
@@ -92,14 +97,13 @@ void push(){
         std::cout << "\"" << name << "\" успішно заховано в рюкзак.\n";
     }
 }
-
 void craft(){
     if (items.empty()) {
         std::cout << "Твій рюкзак порожній, немає чого модифікувати!\n";
         return;
     }
     std::cout << "Напишіть номер предмету, який хочете модифікувати\n";
-    show_item();
+    show();
     int i = get_num(1, items.size());
     items[i-1].modyfy++;
     items[i-1].power += 10;
@@ -107,7 +111,6 @@ void craft(){
     clear_screen();
     std::cout << "\"" << items[i-1].name << "\" успішно модифіковано.\n";
 }
-
 void delete_item(){
     if (items.empty()) {
         std::cout << "Твій рюкзак порожній, нічого викидати!\n";
@@ -115,7 +118,7 @@ void delete_item(){
     }
 
     std::cout << "Напишіть номер предмету, який хочете забрати\n";
-    show_item();
+    show();
     
     // Віднімаємо 1, бо юзер вводить від 1, а вектор рахує від 0
     int index_to_delete = get_num(1, items.size()) - 1;
@@ -124,20 +127,19 @@ void delete_item(){
     std::cout << "\"" << items[index_to_delete].name << "\" успішно викинуто.\n";
     items.erase(items.begin() + index_to_delete);
 }
-
-void save(const std::vector<Item>& itms) {
+void save() {
     std::ofstream out("save.txt");
     if (out.is_open()) {
-        for (size_t i = 0; i < itms.size(); i++ ){
-            out << itms[i].modyfy << "\n";
-            out << itms[i].name << "\n";
-            out << itms[i].power << "\n";
-            out << itms[i].rarity << "\n";
+        for (size_t i = 0; i < items.size(); i++ ){
+            out << items[i].modyfy << "\n";
+            out << items[i].name << "\n";
+            out << items[i].power << "\n";
+            out << items[i].rarity << "\n";
         }
         out.close(); // Після роботи файл ТРЕБА закрити
     }
 }
-void download(std::vector<Item>& itms) {
+void download() {
     std::ifstream in("save.txt");
     if (in.is_open()) {
 
@@ -146,7 +148,7 @@ void download(std::vector<Item>& itms) {
         int power;
         std::string rarity;
 
-        itms.clear();
+        items.clear();
 
         while (in >> modyfy) {
             in.ignore();
@@ -157,13 +159,15 @@ void download(std::vector<Item>& itms) {
             
             std::getline(in, rarity); // Читаємо рідкість
             
-            itms.push_back({modyfy, name, power, rarity});
+            items.push_back({modyfy, name, power, rarity});
         }
         in.close();
     }
 }
 
-void handle_menu() {
+}; 
+
+void handle_menu(Inventory& inventory, bool& is_running) {
     std::string input;
     std::cout << "\nВибери дію (1-5):\n";
     std::cout << "1 - показати вміст рюкзака\n";
@@ -180,19 +184,19 @@ void handle_menu() {
     switch (choice) {
         case 1:
             clear_screen();
-            show_item();
+            inventory.show();
             break;
         case 2:
             clear_screen();
-            push();
+            inventory.push();
             break;
         case 3:
             clear_screen();
-            craft();
+            inventory.craft();
             break;
         case 4:
             clear_screen();
-            delete_item();
+            inventory.delete_item();
             break;
         case 5:
             clear_screen();
@@ -201,13 +205,13 @@ void handle_menu() {
             break;
         case 6:
             clear_screen();
-            save(items);
+            inventory.save();
             std::cout << "Бувай, сталкере! Вдалого полювання за артефактами.\n";
             is_running = false;
             break;
         case 7:
             clear_screen();
-            download(items);
+            inventory.download();
             std::cout << "з поверненням!.\n";
             break;
         default:
@@ -219,12 +223,13 @@ void handle_menu() {
 
 int main() {
 
-    items.push_back({0, "Ніж", 15, "Звичайна"});
+    Inventory inventory;
+    bool is_running = true;
 
     clear_screen();
     std::cout << "Вітаємо у грі \"Рюкзак сталкера\"!\n";
     while (is_running) {
-        handle_menu();
+        handle_menu(inventory , is_running);
     }
     return 0;
 }
